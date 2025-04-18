@@ -9,6 +9,9 @@ export default defineConfig({
     VitePWA({
       registerType: 'autoUpdate',
       includeAssets: ['favicon.svg', 'robots.txt'],
+      strategies: 'injectManifest',
+      srcDir: 'src',
+      filename: 'service-worker.js',
       manifest: {
         name: 'StockPadi',
         short_name: 'StockPadi',
