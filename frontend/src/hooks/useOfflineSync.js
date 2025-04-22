@@ -1,4 +1,4 @@
-import { use, useEffect, useState } from "react";
+import { useEffect, useState } from "react";
 import Dexie from "dexie";
 
 //Initialize Database
@@ -40,5 +40,7 @@ const useOfflineSync = ()=>{
         setQueuedOps([]);
     }
 
-    return {addOperations, removeOperations, clearOperations}
+    return {queuedOps, addOperations, removeOperations, clearOperations}
 }
+
+export default useOfflineSync;
