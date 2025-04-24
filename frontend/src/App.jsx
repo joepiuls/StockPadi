@@ -1,10 +1,15 @@
 import React from 'react'
+import LoginPage from './pages/Login'
+import { ToastContainer } from 'react-toastify'
 
 const App = () => {
   return (
-    <div>
-      <button className='btn btn-primary'>Click</button>
-    </div>
+   
+  <div>
+    <LoginPage />
+    <ToastContainer />
+  </div>
+
   )
 }
 
