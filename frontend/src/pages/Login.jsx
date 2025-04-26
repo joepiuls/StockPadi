@@ -9,8 +9,14 @@ import LoadingSpinner from '../components/LoadingSpinner';
 
 
 const LoginPage = () => {
+  const [isLogin, setIsLogin] = useState(true);
 
- const validationSchema = Yup.object().shape({
+  const loginSchema = Yup.object().shape({
+    email: Yup.string().email('Invalid email').required('Email is required'),
+    password: Yup.string().required('Password is required'),
+  });
+
+ const registeratioSchema = Yup.object().shape({
     email: Yup.string().email('Invalid email').required('Email is required'),
     password: Yup.string().required('Password is required'),
     businessname:  Yup.string().required('Business name is required')
@@ -24,24 +30,25 @@ const LoginPage = () => {
     register
   } = useAuth();
 
-  const [isLogin, setIsLogin] = useState(true);
+
   const {
     values,
     errors,
     validate,
     resetForm,
     handleChange
-  } = useForm({email:'', password:'', businessname:''}, validationSchema)
+  } = useForm({email:'', password:'', businessname:''}, isLogin?loginSchema:registeratioSchema)
 
   const handleSubmit = async (e) => {
     e.preventDefault();
+
   
     const isValid = await validate();
     if (!isValid) return;
-  
+    
     try {
       if (isLogin) {
-        const loginFn = navigator.onLine ? loginOnline : loginOffline;
+        const loginFn = isOffline ? loginOffline : loginOnline;  
         const { success, message } = await loginFn(values.email, values.password);
   
         if (!success) {
@@ -49,14 +56,11 @@ const LoginPage = () => {
         }
         resetForm();
         return toast.success('Successfully loggedIn');
-      } else {
+      } else if(!isLogin) {
         const registerFn = navigator.onLine && register
-        const 
-        {
-        success, 
-        message
-        } = await registerFn(values.email, values.password, values.businessname);
-        if(!success) return toast.error("Something went wrong. Please try again.");
+        if (!navigator.onLine) return toast.error("Registration requires internet access.");
+        const {success, message} = await registerFn(values.email, values.password, values.businessname);
+        if(!success) return toast.error(message);
         return toast.success('Registered Successfully');
       }
     } catch (error) {
@@ -169,7 +173,8 @@ const LoginPage = () => {
             type="submit"
             className="mt-8 w-full h-11 rounded-full text-white bg-brand-blue hover:opacity-90 transition-opacity"
           >
-            {isLogin ? (isOffline ? 'Login Online' : 'Login Offline') : 'Register'}
+            {isLogin ? (isOffline ? 'Login Offline' : 'Login Online') : 'Register'}
+          
           </button>
 
           {/* Toggle Link */}

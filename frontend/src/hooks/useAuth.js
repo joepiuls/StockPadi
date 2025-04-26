@@ -4,6 +4,7 @@ import bcryptjs from 'bcryptjs';
 import CryptoJS from "crypto-js";
 // import jwtDecode from 'jwt-decode'
 import axios from "axios";
+import AuthStore from '../store/AuthStore';
 
 
 // Set up IndexedDB with Dexie
@@ -21,15 +22,40 @@ const decrypt = (cipher, secret)=>{
 
 
 export const useAuth = ()=>{
-    const [user, setUser] = useState(null);
-    const [loading, setLoading] = useState(false);
-    const [isOffline, setIsOffline] = useState(false);
+    const {user, setUser, loading, setLoading, isOffline, setIsOffline} = AuthStore();
 
     const sleep = (ms) => new Promise(resolve => setTimeout(resolve, ms));
 
-    useEffect(()=>{
+    useEffect(() => {
+        const handleOnline = () => setIsOffline(false);
+        const handleOffline = () => setIsOffline(true);
+      
+        window.addEventListener('online', handleOnline);
+        window.addEventListener('offline', handleOffline);
+      
+        // Set initial state
         setIsOffline(!navigator.onLine);
-    })
+      
+        return () => {
+          window.removeEventListener('online', handleOnline);
+          window.removeEventListener('offline', handleOffline);
+        };
+      }, []);
+
+    //   useEffect(() => {
+    //     const checkOfflineSession = async () => {
+    //       if (isOffline) {
+    //         const allUsers = await db.users.toArray();
+    //         if (allUsers.length > 0) {
+    //           const lastUser = allUsers[0]; // or manage recent
+    //           const profile = JSON.parse(decrypt(lastUser.profile, 'mysecretkey'));
+    //           setUser(profile);
+    //         }
+    //       }
+    //     };
+    //     checkOfflineSession();
+    //   }, [isOffline]);
+      
 
     const register = async (email, password, businessname) => {
         setLoading(true)
@@ -49,7 +75,7 @@ export const useAuth = ()=>{
             }
         } catch (err) {
             setLoading(false);
-            return {success:false, message:err.data.message || 'Registration failed'}
+            return {success:false, message:err.response?.data?.message || 'Registration failed'}
         }
     }
 
@@ -71,7 +97,7 @@ export const useAuth = ()=>{
             }
         } catch (err) {
             setLoading(false);
-            return {success:false, message:err.data.message || 'Registration failed'}
+            return {success:false, message:err.response?.data?.message || 'Registration failed'}
         }
     }
 
@@ -80,7 +106,7 @@ export const useAuth = ()=>{
         await sleep(7000);
         try {
             const res = await axios.post('/api/login', {email:email, password:password});
-            const data = res.data.json();
+            const data = res.data;
 
             if (res.status===200) {
                 const {token, user} = data;
@@ -116,10 +142,10 @@ export const useAuth = ()=>{
         try {
             const userRecord = await db.users.get(email);
             if (!userRecord) {
-                return{success:false, message:'No offline record found'}
+                return {success:false, message:'No offline record found'}
             }
 
-            const isValid = await bcryptjs.compareSync(password, userRecord.passwordHash);
+            const isValid = bcryptjs.compareSync(password, userRecord.passwordHash);
             if(!isValid) return{success:false, message:'Invalid password'};
             const decryptedProfile = JSON.parse(decrypt(userRecord.profile, 'mysecretkey'));
             setUser(decryptedProfile);
