@@ -1,13 +1,16 @@
 import React, { useState, useEffect } from "react";
 import { NavLink, Outlet } from "react-router-dom";
-import { ChevronDown, ChevronUp, Menu, X, Building2, Boxes, ShoppingCart, Users, BarChart2, Brain, UserCog, PlusSquare, ClipboardList, BarChart } from "lucide-react";
+import { ChevronDown, ChevronUp, Menu, X, Building2, Boxes, 
+         ShoppingCart, Users, BarChart2, Brain, UserCog, 
+         PlusSquare, ClipboardList, BarChart } from "lucide-react";
 import { sidebarGroups } from "./sidebarlinks";
 import { useSidebarStore } from "../store/sidebarStore";
 import DashboardContent from "../components/DashboardContent";
-import logo1 from '../assets/logo1.png'
 import Topbar from "../components/Topbar";
+import useAuthStore from "../store/useAuthStore";
+import LoadingSpinner from "../components/LoadingSpinner";
+import stockpadilogo from '../assets/stockpadi_logo.png';
 
-// All icons available
 const icons = {
   Building2,
   Boxes,
@@ -27,10 +30,9 @@ const Dashboard = () => {
     return savedState ? JSON.parse(savedState) : false;
   });
   const [openDropdown, setOpenDropdown] = useState(null);
-
+  const { user, loading } = useAuthStore();
   const { badges, setBadges } = useSidebarStore();
-
-  const userRole = "admin"; // Example (you can replace this from Zustand auth store)
+  const userRole = user?.role;
 
   const handleSidebarToggle = () => {
     const newState = !isMobileOpen;
@@ -42,11 +44,10 @@ const Dashboard = () => {
     setOpenDropdown(openDropdown === key ? null : key);
   };
 
-  // Fetch badges from API
   useEffect(() => {
     const fetchBadges = async () => {
       try {
-        const res = await fetch("/api/dashboard/badges"); // Your API
+        const res = await fetch("/api/dashboard/badges");
         const data = await res.json();
         setBadges(data);
       } catch (error) {
@@ -55,86 +56,113 @@ const Dashboard = () => {
     };
 
     fetchBadges();
-
-    const interval = setInterval(fetchBadges, 60000); // refresh every 1 min
-    return () => clearInterval(interval); // clean up interval
+    const interval = setInterval(fetchBadges, 60000);
+    return () => clearInterval(interval);
   }, [setBadges]);
 
   return (
-    <div className="flex h-screen relative">
+    <div className="flex h-screen relative bg-gray-50 dark:bg-gray-900">
+      {loading && <LoadingSpinner />}
+
       {/* Mobile Backdrop */}
       {isMobileOpen && (
         <div
-          className="fixed inset-0 bg-black/50 backdrop-blur-sm z-10 md:hidden transition-opacity duration-300"
+          className="fixed inset-0 bg-black/30 dark:bg-gray-800/80 backdrop-blur-sm z-10 md:hidden"
           onClick={() => setIsMobileOpen(false)}
         />
       )}
 
       {/* Sidebar */}
-      <div className={`bg-white border-r w-64 md:block fixed md:relative z-30 h-full shadow-lg transform transition-transform ease-in-out duration-500 ${isMobileOpen ? "translate-x-0" : "-translate-x-full"} md:translate-x-0`}>
+      <div className={`bg-white dark:bg-gray-800 border-r border-gray-200 dark:border-gray-700 w-64 md:block fixed md:relative z-30 h-full shadow-xl transform transition-transform ease-in-out duration-300 ${
+        isMobileOpen ? "translate-x-0" : "-translate-x-full"
+      } md:translate-x-0`}>
+
         {/* Sidebar Header */}
-        <div className="p-4 border-b font-bold text-lg flex justify-between items-center">
-          <div className="flex flex-row justify-center">
-          <img src={logo1} alt="logo" className='w-[30px] h-[28px]' />
-          <span className="text-brand-blue">StockPadi</span>
+        <div className="p-4 border-b border-gray-200 dark:border-gray-700">
+          <div className="flex items-center gap-3">
+            <div className="bg-brand-blue rounded-lg px-3">
+              <span className="text-white text-2xl font-bold">S</span>
+            </div>
+            <span className="text-brand-blue dark:text-brand-blue-light font-bold text-2xl">
+              StockPadi
+            </span>
           </div>
-          <button className="md:hidden" onClick={() => setIsMobileOpen(false)}>
-            <X className="w-6 h-6 text-brand-blue" />
+          <button 
+            className="md:hidden text-gray-400 hover:text-gray-600 dark:hover:text-gray-200"
+            onClick={() => setIsMobileOpen(false)}
+          >
+            <X className="w-6 h-6" />
           </button>
         </div>
 
         {/* Navigation Links */}
-        <nav className="p-2 space-y-2 text-brand-dark">
+        <nav className="p-2 space-y-1">
           {sidebarGroups.map((group, idx) => (
             group.role.includes(userRole) && (
               <div key={idx}>
                 {/* Group Title */}
                 <button
                   onClick={() => toggleDropdown(group.title)}
-                  className={`flex justify-between items-center w-full px-3 py-2 text-left font-medium rounded transition ${openDropdown === group.title ? "bg-indigo-100 text-brand-blue" : "hover:bg-gray-100 text-brand-dark"}`}
+                  className={`flex justify-between items-center w-full px-3 py-2.5 text-left font-medium rounded-lg transition-colors ${
+                    openDropdown === group.title 
+                      ? "bg-brand-blue/10 text-brand-blue dark:bg-gray-700 dark:text-white" 
+                      : "text-gray-700 hover:bg-gray-100 dark:text-gray-300 dark:hover:bg-gray-700"
+                  }`}
                 >
-                  <div className="flex items-center gap-2">
-                    {(() => {
-                      const IconComponent = icons[group.icon];
-                      return IconComponent ? <IconComponent size={20} className="text-brand-dark" /> : null;
-                    })()}
-                    <span>{group.title}</span>
+                  <div className="flex items-center gap-3">
+                    {icons[group.icon] && React.createElement(icons[group.icon], {
+                      size: 20,
+                      className: `${
+                        openDropdown === group.title 
+                          ? "text-brand-blue dark:text-white" 
+                          : "text-gray-500 dark:text-gray-400"
+                      }`
+                    })}
+                    <span className="text-sm">{group.title}</span>
                   </div>
-                  {openDropdown === group.title ? <ChevronUp size={18} /> : <ChevronDown size={18} />}
+                  <ChevronDown
+                    size={18}
+                    className={`transform transition-transform ${
+                      openDropdown === group.title ? "rotate-180" : ""
+                    } text-gray-400 dark:text-gray-500`}
+                  />
                 </button>
 
                 {/* Group Links */}
-                <div className={`overflow-hidden transition-all duration-300 ease-in-out ${openDropdown === group.title ? "max-h-screen" : "max-h-0"}`}>
-                  <ul className="ml-2 mt-1 space-y-1 border-l border-brand-blue pl-2">
+                <div className={`overflow-hidden transition-all duration-300 ease-in-out ${
+                  openDropdown === group.title ? "max-h-screen" : "max-h-0"
+                }`}>
+                  <ul className="ml-3 mt-1 space-y-1 border-l border-gray-200 dark:border-gray-600 pl-3">
                     {group.links.map((link, linkIdx) => (
                       <li key={linkIdx}>
                         <NavLink
                           to={link.path}
-                          onClick={() => {
-                            if (window.innerWidth < 768) {
-                              handleSidebarToggle(); // Auto close on mobile
-                            }
-                          }}
-                          className={({ isActive }) => `flex items-center gap-2 px-3 py-1.5 text-sm rounded-md transition relative ${isActive ? "bg-indigo-100 text-brand-blue font-semibold" : "hover:bg-gray-100 text-brand-dark"}`}
+                          onClick={() => window.innerWidth < 768 && handleSidebarToggle()}
+                          className={({ isActive }) => `flex items-center gap-3 px-3 py-2 text-sm rounded-md transition-colors relative ${
+                            isActive 
+                              ? "bg-brand-blue/10 text-brand-blue dark:bg-gray-700 dark:text-white" 
+                              : "text-gray-600 hover:bg-gray-100 dark:text-gray-300 dark:hover:bg-gray-700"
+                          }`}
                         >
                           {({ isActive }) => (
                             <>
-                              {/* Active line */}
-                              <span className={`absolute left-0 top-0 h-full w-1 rounded-r-full transition-all ${isActive ? "bg-brand-blue" : "bg-transparent"}`} />
+                              <span className={`absolute left-0 top-0 h-full w-1 rounded-r-full transition-all ${
+                                isActive ? "bg-brand-blue dark:bg-brand-blue-light" : "bg-transparent"
+                              }`} />
                               
-                              {/* Icon */}
-                              {icons[link.icon] && (
-                                <span className="flex items-center">
-                                  {React.createElement(icons[link.icon], { size: 16 })}
-                                </span>
-                              )}
+                              {icons[link.icon] && React.createElement(icons[link.icon], {
+                                size: 16,
+                                className: `flex-shrink-0 ${
+                                  isActive 
+                                    ? "text-brand-blue dark:text-brand-blue-light" 
+                                    : "text-gray-500 dark:text-gray-400"
+                                }`
+                              })}
 
-                              {/* Name */}
-                              <span>{link.name}</span>
+                              <span className="truncate">{link.name}</span>
 
-                              {/* Badge */}
                               {link.badgeKey && badges[link.badgeKey] > 0 && (
-                                <span className="ml-auto bg-brand-blue text-white text-xs px-2 py-0.5 rounded-full">
+                                <span className="ml-auto bg-brand-blue dark:bg-brand-blue-light text-white text-xs px-2 py-1 rounded-full min-w-[24px] flex items-center justify-center">
                                   {badges[link.badgeKey]}
                                 </span>
                               )}
@@ -154,15 +182,18 @@ const Dashboard = () => {
       {/* Main Content */}
       <div className="flex-1 flex flex-col h-screen overflow-hidden">
         {/* Top Bar */}
-        <div className="flex justify-between items-center px-4 py-4 border-b bg-white shadow-sm">
-          <button className="md:hidden" onClick={() => setIsMobileOpen(true)}>
-            <Menu className="text-brand-blue" />
+        <div className="flex justify-between items-center px-6 py-4 border-b border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 shadow-sm">
+          <button 
+            className="md:hidden p-1.5 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700 text-gray-600 dark:text-gray-300"
+            onClick={() => setIsMobileOpen(true)}
+          >
+            <Menu className="w-5 h-5" />
           </button>
           <Topbar role={userRole} />
         </div>
 
         {/* Page Content */}
-       <DashboardContent />
+        <DashboardContent />
       </div>
     </div>
   );

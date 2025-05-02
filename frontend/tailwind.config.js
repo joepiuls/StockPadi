@@ -1,5 +1,6 @@
 // tailwind.config.js
 module.exports = {
+  darkMode: 'class',
   content: ['./src/**/*.{js,jsx,ts,tsx}'],
   theme: {
     extend: {
@@ -7,11 +8,13 @@ module.exports = {
         skew: 'polygon(0 0, 100% 0, 100% 80%, 0 100%)',
       },
       colors: {
-        brand: {
-          white: '#FFFFFF',
-          blue: '#3D57F2',
-          dark: '#05095F',
-        },
+        'brand-blue': '#2563eb',      // Default brand blue
+        'brand-blue-light': '#3b82f6', // Lighter variant for dark mode
+        gray: {
+          700: '#374151',
+          800: '#1f2937',
+          900: '#111827',
+        }
       },
     },
   },

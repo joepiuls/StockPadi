@@ -1,35 +1,28 @@
 import React, { useState } from 'react';
-import { Link } from 'react-router'
 import { useForm } from '../hooks/useForm';
 import * as Yup from 'yup';
-import { useAuth } from '../hooks/useAuth';
 import { toast } from 'react-toastify';
-import logo from '../assets/logo.png'
+import { Mail, Lock, Briefcase } from 'lucide-react';
 import LoadingSpinner from '../components/LoadingSpinner';
-
+import useAuthStore from '../store/useAuthStore';
+import { useNavigate } from 'react-router-dom';
 
 const LoginPage = () => {
   const [isLogin, setIsLogin] = useState(true);
+  const navigate = useNavigate();
 
   const loginSchema = Yup.object().shape({
     email: Yup.string().email('Invalid email').required('Email is required'),
     password: Yup.string().required('Password is required'),
   });
 
- const registeratioSchema = Yup.object().shape({
+  const registrationSchema = Yup.object().shape({
     email: Yup.string().email('Invalid email').required('Email is required'),
     password: Yup.string().required('Password is required'),
-    businessname:  Yup.string().required('Business name is required')
+    businessname: Yup.string().required('Business name is required')
   });
 
-  const {
-    isOffline,
-    loading,
-    loginOffline,
-    loginOnline,
-    register
-  } = useAuth();
-
+  const { user, loading, isOffline, loginOnline, loginOffline, register, logOut } = useAuthStore();
 
   const {
     values,
@@ -37,149 +30,150 @@ const LoginPage = () => {
     validate,
     resetForm,
     handleChange
-  } = useForm({email:'', password:'', businessname:''}, isLogin?loginSchema:registeratioSchema)
+  } = useForm({ email: '', password: '', businessname: '' }, isLogin ? loginSchema : registrationSchema);
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-
-  
     const isValid = await validate();
     if (!isValid) return;
-    
+
     try {
       if (isLogin) {
-        const loginFn = isOffline ? loginOffline : loginOnline;  
+        const loginFn = isOffline ? loginOffline : loginOnline;
         const { success, message } = await loginFn(values.email, values.password);
-  
-        if (!success) {
-            return  toast.error(message);
-        }
+        if (!success) return toast.error(message);
         resetForm();
-        return toast.success('Successfully loggedIn');
-      } else if(!isLogin) {
-        const registerFn = navigator.onLine && register
+        navigate('/dashboard');
+        return toast.success('Successfully logged in');
+      } else {
         if (!navigator.onLine) return toast.error("Registration requires internet access.");
-        const {success, message} = await registerFn(values.email, values.password, values.businessname);
-        if(!success) return toast.error(message);
-        return toast.success('Registered Successfully');
+        const { success, message } = await register(values.email, values.password, values.businessname);
+        if (!success) return toast.error(message);
+        navigate('/');
+        return toast.success('Registered successfully');
       }
     } catch (error) {
       toast.error("Something went wrong. Please try again.");
       console.error(error);
     }
   };
-  
 
   return (
-<div className="flex h-screen w-full bg-white">
-{loading && <LoadingSpinner />}
+    <div className="flex h-screen w-full bg-white dark:bg-gray-900">
+      {loading && <LoadingSpinner />}
+
       {/* Left Side */}
-<div className="hidden md:flex flex-col justify-center items-center w-1/2 bg-brand-blue text-white px-8">
-  <div className="relative z-10 flex flex-col justify-center items-center text-center">
-    <img
-      src={logo}
-      alt="StockPadi Logo"
-      className="w-28 mb-6"
-    />
-    <h2 className="text-4xl font-bold mb-4">Welcome to StockPadi</h2>
-    <p className="text-lg opacity-90">
-      Smart inventory for growing businesses. Stay stocked. Stay smart.
-    </p>
-  </div>
-</div>
+      <div className="hidden md:flex flex-col justify-center items-center w-1/2 bg-brand-blue dark:bg-brand-blue/90 px-8">
+        <div className="relative z-10 flex flex-col items-center text-center space-y-6">
+          <div className="flex items-center gap-3 mb-8">
+            <div className="bg-white dark:bg-gray-100 rounded-lg px-4 py-2">
+              <span className="text-brand-blue text-2xl font-bold">S</span>
+            </div>
+            <h1 className="text-3xl font-bold text-white">StockPadi</h1>
+          </div>
+          <h2 className="text-4xl font-bold text-white">Welcome Back</h2>
+          <p className="text-lg text-white/90">
+            {isLogin 
+              ? 'Sign in to manage your business inventory'
+              : 'Create your account to get started'}
+          </p>
+        </div>
+      </div>
 
       {/* Right Side */}
-      <div className="w-full md:w-1/2 flex flex-col items-center justify-center px-4">
-        <img
-        src={logo}
-        alt="StockPadi Logo"
-        className="w-40 mb-10 md:hidden"
-        />
-        <form onSubmit={handleSubmit} className="md:w-96 w-80 flex flex-col items-center">
-          <h2 className="text-4xl text-gray-900 font-semibold">
-            {isLogin ? 'Sign in' : 'Create account'}
-          </h2>
-          <p className="text-sm text-gray-500/90 mt-3">
-            {isLogin
-              ? 'Welcome back! Please sign in to continue'
-              : 'Join us! Create an account to get started'}
-          </p>
-
+      <div className="w-full md:w-1/2 flex flex-col items-center justify-center px-4 dark:bg-gray-900">
+        <form onSubmit={handleSubmit} className="w-full max-w-md space-y-6 px-4">
+          <div className="text-center space-y-2">
+            <div className="md:hidden flex justify-center items-center gap-3 mb-8">
+              <div className="bg-brand-blue rounded-lg px-3 py-2">
+                <span className="text-white text-2xl font-bold">S</span>
+              </div>
+              <h1 className="text-2xl font-bold text-gray-900 dark:text-white">StockPadi</h1>
+            </div>
+            <h2 className="text-3xl font-semibold text-gray-900 dark:text-white">
+              {isLogin ? 'Sign In' : 'Create Account'}
+            </h2>
+            <p className="text-gray-500 dark:text-gray-400">
+              {isLogin
+                ? 'Welcome back! Please sign in to continue'
+                : 'Join us! Create an account to get started'}
+            </p>
+          </div>
 
           {/* Email Input */}
-          <div className="flex items-center w-full border border-gray-300/60 h-12 rounded-full overflow-hidden pl-6 gap-2">
-            <svg width="16" height="11" viewBox="0 0 16 11" fill="none" xmlns="http://www.w3.org/2000/svg">
-              <path fillRule="evenodd" clipRule="evenodd" d="M0 .55.571 0H15.43l.57.55v9.9l-.571.55H.57L0 10.45zm1.143 1.138V9.9h13.714V1.69l-6.503 4.8h-.697zM13.749 1.1H2.25L8 5.356z" fill="#6B7280"/>
-            </svg>
-            <input
-              type="email"
-              placeholder="Email"
-              name='email'
-              className="bg-transparent text-sm text-gray-500/80
-               placeholder-gray-500/80 outline-none w-full h-full"
-               onChange={handleChange}
-               value={values.email || ''}
-              required
-            />
-            {errors.email && <p className="text-red-500 text-sm">{errors.email}</p>}
+          <div className="space-y-2">
+            <div className="flex items-center border dark:border-gray-700 rounded-lg px-4 py-3 gap-3">
+              <Mail className="w-5 h-5 text-gray-400" />
+              <input
+                type="email"
+                name="email"
+                placeholder="Email"
+                className="w-full bg-transparent text-gray-700 dark:text-gray-200 placeholder-gray-500 outline-none"
+                onChange={handleChange}
+                value={values.email}
+              />
+            </div>
+            {errors.email && <p className="text-red-500 text-sm pl-2">{errors.email}</p>}
           </div>
 
           {/* Password Input */}
-          <div className="flex items-center mt-6 w-full border border-gray-300/60 h-12 rounded-full overflow-hidden pl-6 gap-2">
-            <svg width="13" height="17" viewBox="0 0 13 17" fill="none" xmlns="http://www.w3.org/2000/svg">
-              <path d="M13 8.5c0-.938-.729-1.7-1.625-1.7h-.812V4.25C10.563 1.907 8.74 0 6.5 0S2.438 1.907 2.438 4.25V6.8h-.813C.729 6.8 0 7.562 0 8.5v6.8c0 .938.729 1.7 1.625 1.7h9.75c.896 0 1.625-.762 1.625-1.7zM4.063 4.25c0-1.406 1.093-2.55 2.437-2.55s2.438 1.144 2.438 2.55V6.8H4.061z" fill="#6B7280"/>
-            </svg>
-            <input
-              type="password"
-              name='password'
-              placeholder="Password"
-              className="bg-transparent text-sm text-gray-500/80 placeholder-gray-500/80 outline-none w-full h-full"
-              required
-              onChange={handleChange}
-              value={values.password || ''}
-            />
-            {errors.password && <p className="text-red-500 text-sm">{errors.password}</p>}
+          <div className="space-y-2">
+            <div className="flex items-center border dark:border-gray-700 rounded-lg px-4 py-3 gap-3">
+              <Lock className="w-5 h-5 text-gray-400" />
+              <input
+                type="password"
+                name="password"
+                placeholder="Password"
+                className="w-full bg-transparent text-gray-700 dark:text-gray-200 placeholder-gray-500 outline-none"
+                onChange={handleChange}
+                value={values.password}
+              />
+            </div>
+            {errors.password && <p className="text-red-500 text-sm pl-2">{errors.password}</p>}
           </div>
 
-          {/* Extra field for register */}
-          <div className={`w-full mt-6 ${isLogin ? 'hidden' : ''}`}>
-            <input
-                type="text"
-                name='businessname'
-                placeholder="Business name"
-                className="input input-bordered w-full rounded-full"
-                onChange={handleChange}
-                value={values.businessname || ''}
-                required={!isLogin}
-            />
-            {!isLogin && errors.businessname && (
-                <p className="text-red-500 text-sm">{errors.businessname}</p>
-            )}
-            </div>
-
-          {/* Login Options */}
-          {isLogin && (
-            <div className="w-full flex items-center justify-between mt-6 text-gray-500/80">
-              <div className="flex items-center gap-2">
-                <input className="h-5" type="checkbox" id="remember" />
-                <label className="text-sm" htmlFor="remember">Remember me</label>
+          {/* Business Name Input */}
+          {!isLogin && (
+            <div className="space-y-2">
+              <div className="flex items-center border dark:border-gray-700 rounded-lg px-4 py-3 gap-3">
+                <Briefcase className="w-5 h-5 text-gray-400" />
+                <input
+                  type="text"
+                  name="businessname"
+                  placeholder="Business Name"
+                  className="w-full bg-transparent text-gray-700 dark:text-gray-200 placeholder-gray-500 outline-none"
+                  onChange={handleChange}
+                  value={values.businessname}
+                />
               </div>
-              <a href='#' className="text-sm underline">Forgot password?</a>
+              {errors.businessname && <p className="text-red-500 text-sm pl-2">{errors.businessname}</p>}
+            </div>
+          )}
+
+          {/* Remember Me & Forgot Password */}
+          {isLogin && (
+            <div className="flex items-center justify-between text-sm">
+              <label className="flex items-center gap-2 text-gray-600 dark:text-gray-400">
+                <input type="checkbox" className="rounded border-gray-300 dark:border-gray-600" />
+                Remember me
+              </label>
+              <button type="button" className="text-brand-blue hover:underline">
+                Forgot password?
+              </button>
             </div>
           )}
 
           {/* Submit Button */}
           <button
             type="submit"
-            className="mt-8 w-full h-11 rounded-full text-white bg-brand-blue hover:opacity-90 transition-opacity"
+            className="w-full py-3 rounded-lg bg-brand-blue text-white hover:bg-brand-blue/90 transition-colors"
           >
-            {isLogin ? (isOffline ? 'Login Offline' : 'Login Online') : 'Register'}
-          
+            {isLogin ? (isOffline ? 'Login Offline' : 'Login Online') : 'Create Account'}
           </button>
 
           {/* Toggle Link */}
-          <p className="text-gray-500/90 text-sm mt-4">
-            {isLogin ? "Don’t have an account?" : "Already have an account?"}{' '}
+          <p className="text-center text-gray-600 dark:text-gray-400">
+            {isLogin ? "Don't have an account?" : "Already have an account?"}{' '}
             <button
               type="button"
               className="text-brand-blue hover:underline"

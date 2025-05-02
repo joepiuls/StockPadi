@@ -1,6 +1,9 @@
-import { create } from "zustand";
+// store/sidebarStore.js
+import { create } from 'zustand';
 
 export const useSidebarStore = create((set) => ({
   badges: {},
-  setBadges: (newBadges) => set({ badges: newBadges }),
+  badgeError: null,
+  setBadges: (badges) => set({ badges, badgeError: null }),
+  setBadgeError: (error) => set({ badgeError: error }),
 }));

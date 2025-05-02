@@ -11,6 +11,9 @@ db.version(1).stores({
 export const useNotificationStore = create((set, get) => ({
   notifications: [],
   unreadCount: 0,
+  isOpen:false,
+
+  setIsOpen:(open)=>set({isOpen:open}),
 
   fetchNotifications: async () => {
     const allNotifications = await db.notifications.orderBy('createdAt').reverse().toArray();

@@ -11,7 +11,7 @@ const Dropdown = ({ options = [], label = "Select", onSelect }) => {
   };
 
   return (
-    <div className="relative w-44 text-sm">
+    <div className="relative w-44 text-sm bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100">
       <button
         type="button"
         onClick={() => setIsOpen(!isOpen)}
